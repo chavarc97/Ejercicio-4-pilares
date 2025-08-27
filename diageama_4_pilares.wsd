@@ -30,7 +30,7 @@ class NotificadorSMS {
 }
 
 ' Clase abstracta base para los sensores
-abstract class Sensor(ABC){
+abstract class Sensor{
     +id: String
     +ventana: int
     #calibracion: float
@@ -83,8 +83,14 @@ class GestorAlertas {
     -sensores: list[Sensor]
     -notificador: list[Notificador]
     -configuración: ConfiguracionDelSistema
+    -log_alertas: list[RegistroAlerta]
 
-    +evaluar_y_notificar() : void
+    +__init__(configuracion: ConfiguracionSistema)
+    +agregar_sensor(sensor: Sensor): void
+    +agregar_notificador(notificador: Notificador): void
+    +evaluar_y_notificar(): void
+    +generar_reporte(): String
+    +limpiar_historico(): void
 }
 
 ' Agregación - Sistema tiene GestorAlertas
@@ -113,13 +119,35 @@ class ConfiguracionSistema {
 }
 
 ' Clase para registros 
-class RegistroAlerta{}
+class RegistroAlerta{
+    +timestamp: DateTime
+    +sensor_id: String
+    +mensaje: String
+    +nivel: String
+    +valor_medido: float
+    
+    +__init__(sensor_id: String, mensaje: String, nivel: String, valor: float)
+    +to_json(): String
+    +to_csv(): String
+}
 
 ' Clase para interfaz de usuario
-class PanelDeControl{}
+class PanelDeControl{
+    -sistema: SistemaMonitoreo
+    -interfaz_activa: boolean
+    
+    +__init__(sistema: SistemaMonitoreo)
+    +mostrar_dashboard(): void
+    +procesar_comandos(): void
+    +actualizar_interfaz(): void
+}
 
 ' Factory para crear sensores
-class SensorFactory{}
+class SensorFactory{
+    +crear_sensor_temperatura(id: String, umbral: float): SensorTemperatura
+    +crear_sensor_vibracion(id: String, rms: float): SensorVibracion
+    +crear_sensor_humedad(id: String, umbral: float): SensorHumedad
+}
 
 ' -----------------------RELACIONES----------------------
 ' Herencia (Generalización)
@@ -131,5 +159,23 @@ Sensor <|-- SensorHumedad : extends
 Notificador <|.. NotificadorEmail : implements
 Notificador <|.. NotificadorSMS : implements
 Notificador <|.. NotificadorWebhook : implements
+
+' Composición (rombo negro) - GestorAlertas CONTIENE sensores y notificadores
+GestorAlertas *-- Sensor : contains
+GestorAlertas *-- Notificador : contains
+GestorAlertas *-- ConfiguracionSistema : contains
+GestorAlertas *-- RegistroAlerta : contains
+
+' Agregación (rombo blanco) - SistemaMonitoreo TIENE GestorAlertas
+SistemaMonitoreo "1" o-- "1" GestorAlertas : has
+SistemaMonitoreo "1" o-- "1" PanelDeControl : has
+
+' Asociación - PanelDeControl conoce a SistemaMonitoreo
+PanelDeControl --> SistemaMonitoreo : uses
+
+' Dependencia (flecha punteada) - SensorFactory crea sensores
+SensorFactory "1" ..> "0..*" SensorTemperatura : creates
+SensorFactory "1" ..> "0..*" SensorVibracion : creates
+SensorFactory "1" ..> "0..*" SensorHumedad : creates
 
 @enduml
