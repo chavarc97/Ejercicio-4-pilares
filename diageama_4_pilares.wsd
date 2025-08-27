@@ -1,0 +1,135 @@
+@startuml diagrama_4_pilares
+' Protocol/Interface
+interface Notificador {
+    +enviar(mensaje: String): void
+}
+
+' Implementaciones del Protocol / Interface
+class NotificadorEmail {
+    -destinatario: String
+    -servidor_smtp: String
+    +__init__(destinatario: String, servidor: String)
+    +enviar(mensaje: String): void
+    +validar_email(): boolean
+}
+
+class NotificadorWebhook {
+    -url: String
+    -timeout: int
+    +__init__(url: String, timeout: int)
+    +enviar(mensaje: String): void
+    +validar_url(): boolean
+}
+
+class NotificadorSMS {
+    -numero: String
+    -proveedor: String
+    +__init__(numero: String, proveedor: String)
+    +enviar(mensaje: String): void
+    +formato_numero(): String
+}
+
+' Clase abstracta base para los sensores
+abstract class Sensor(ABC){
+    +id: String
+    +ventana: int
+    #calibracion: float
+    #buffer: list[float]
+    #ubicacion: String
+    
+    +__init__(id: String, ventana: int, ubicacion: String)
+    +leer(valor: float): void
+    +promedio(): float
+    +obtener_estado(): String
+    {abstract} +en_alerta(): boolean
+    {abstract} +obtener_tipo(): String
+}   
+
+' HERENCIA: Subclases Concretas
+class SensorTemperatura {
+    -umbral_max: float
+    -umbral_min: float
+    -unidad: String
+    
+    +__init__(id: String, umbral_max: float, umbral_min: float)
+    +en_alerta(): boolean
+    +obtener_tipo(): String
+    +celsius_to_fahrenheit(): float
+}
+
+class SensorVibracion {
+    -rms_umbral: float
+    -frecuencia: int
+    
+    +__init__(id: String, rms_umbral: float, frecuencia: int)
+    +en_alerta(): boolean
+    +obtener_tipo(): String
+    +calcular_rms(): float
+}
+
+class SensorHumedad{
+    -umbral_humedad: float
+    -tipo_ambiente: String
+    
+    +__init__(id: String, umbral: float, ambiente: String)
+    +en_alerta(): boolean
+    +obtener_tipo(): String
+    +calcular_punto_rocio(): float
+}
+
+
+' Composición - GestorAlertas contiene sensores y notificadores
+class GestorAlertas {
+    -sensores: list[Sensor]
+    -notificador: list[Notificador]
+    -configuración: ConfiguracionDelSistema
+
+    +evaluar_y_notificar() : void
+}
+
+' Agregación - Sistema tiene GestorAlertas
+class SistemaMonitoreo {
+    -nombre: String
+    -version: String
+    -gestor_alertas: GestorAlertas
+    -panel_control: PanelControl
+    
+    +__init__(nombre: String, version: String)
+    +inicializar(): void
+    +detener(): void
+    +obtener_estado_general(): String
+}
+
+' Clase de configuración
+class ConfiguracionSistema {
+    +intervalo_verificacion: int
+    +max_alertas_por_hora: int
+    +nivel_log: String
+    +ruta_logs: String
+    
+    +cargar_configuracion(archivo: String): void
+    +guardar_configuracion(): void
+    +validar_configuracion(): boolean
+}
+
+' Clase para registros 
+class RegistroAlerta{}
+
+' Clase para interfaz de usuario
+class PanelDeControl{}
+
+' Factory para crear sensores
+class SensorFactory{}
+
+' -----------------------RELACIONES----------------------
+' Herencia (Generalización)
+Sensor <|-- SensorTemperatura : extends
+Sensor <|-- SensorVibracion : extends  
+Sensor <|-- SensorHumedad : extends
+
+' Implementacion
+Notificador <|.. NotificadorEmail : implements
+Notificador <|.. NotificadorSMS : implements
+Notificador <|.. NotificadorWebhook : implements
+
+@enduml
