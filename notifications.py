@@ -187,12 +187,12 @@ class SensorVibracion(Sensor):
 # ADD: Sensor para humedad respetando la herencia y polimorfismo
 @dataclass
 class SensorHumedad(Sensor):
-    umbral: float = 85.0
+    umbral_humedad: float = 85.0
     tipo_ambiente: str = "interior"
     
     def en_alerta(self) -> bool:
-        return self.promedio >= self.umbral
-    
+        return self.promedio >= self.umbral_humedad
+
     def obtener_tipo(self) -> str:
         """Implementación específica del método abstracto"""
         return f"Humedad en {self.tipo_ambiente}"
@@ -353,7 +353,7 @@ def main() -> None:
     print("🚀 Iniciando Sistema de Monitoreo - Demostración de 4 Pilares OOP")
     
     # Crear sistema principal
-    sistema = SistemaDeMonitoreo("MonitorPro", "2.0.0")
+    sistema = SistemaDeMonitoreo("MonitorPro", "1.0.0")
     
     # Crear notificadores usando diferentes implementaciones (Polimorfismo)
     email_notif = NotificadorEmail("admin@empresa.com", "smtp.empresa.com")
