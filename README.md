@@ -1,4 +1,4 @@
-![1756332174970](images/README/1756332174970.png)
+![1756484504766](images/README/1756484504766.png)
 
 # Sistema de Monitoreo - 4 Pilares OOP
 
@@ -34,6 +34,8 @@ Este proyecto implementa un sistema completo de monitoreo de sensores que demues
 6. **SistemaMonitoreo**: Clase principal del sistema
 7. **Notificadores**: Email, Webhook, SMS
 8. **FactoriaSensores**: Crea sensores usando Factory Pattern
+9. **PanelControl**: Interfaz de usuario para interactuar con el sistema
+
 
 ## 🔧 Requisitos
 
@@ -67,6 +69,4 @@ bash
 
 ```bash
 python notifications.py
-```
-
 ```
