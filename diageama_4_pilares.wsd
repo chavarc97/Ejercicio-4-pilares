@@ -1,6 +1,6 @@
 @startuml diagrama_4_pilares
 ' Protocol/Interface
-interface Notificador {
+interface Notificador << (I,lightblue) Interface >> {
     +enviar(mensaje: String): void
 }
 
@@ -30,27 +30,28 @@ class NotificadorSMS {
 }
 
 ' Clase abstracta base para los sensores
-abstract class Sensor{
+abstract class Sensor << (A,Orange) Abstract >> {
     +id: String
     +ventana: int
     #calibracion: float
     #buffer: list[float]
     #ubicacion: String
-    
+
     +__init__(id: String, ventana: int, ubicacion: String)
     +leer(valor: float): void
     +promedio(): float
     +obtener_estado(): String
     {abstract} +en_alerta(): boolean
     {abstract} +obtener_tipo(): String
-}   
+}
+
 
 ' HERENCIA: Subclases Concretas
 class SensorTemperatura {
     -umbral_max: float
     -umbral_min: float
     -unidad: String
-    
+
     +__init__(id: String, umbral_max: float, umbral_min: float)
     +en_alerta(): boolean
     +obtener_tipo(): String
@@ -60,7 +61,7 @@ class SensorTemperatura {
 class SensorVibracion {
     -rms_umbral: float
     -frecuencia: int
-    
+
     +__init__(id: String, rms_umbral: float, frecuencia: int)
     +en_alerta(): boolean
     +obtener_tipo(): String
@@ -70,7 +71,7 @@ class SensorVibracion {
 class SensorHumedad{
     -umbral_humedad: float
     -tipo_ambiente: String
-    
+
     +__init__(id: String, umbral: float, ambiente: String)
     +en_alerta(): boolean
     +obtener_tipo(): String
@@ -81,8 +82,8 @@ class SensorHumedad{
 ' Composición - GestorAlertas contiene sensores y notificadores
 class GestorAlertas {
     -sensores: list[Sensor]
-    -notificador: list[Notificador]
-    -configuración: ConfiguracionDelSistema
+    -notificadores: list[Notificador]
+    -configuracion: ConfiguracionSistema
     -log_alertas: list[RegistroAlerta]
 
     +__init__(configuracion: ConfiguracionSistema)
@@ -91,6 +92,7 @@ class GestorAlertas {
     +evaluar_y_notificar(): void
     +generar_reporte(): String
     +limpiar_historico(): void
+    +sensores(): list[Sensor]
 }
 
 ' Agregación - Sistema tiene GestorAlertas
@@ -98,12 +100,14 @@ class SistemaMonitoreo {
     -nombre: String
     -version: String
     -gestor_alertas: GestorAlertas
-    -panel_control: PanelControl
+    -panel_control: PanelDeControl
     
     +__init__(nombre: String, version: String)
     +inicializar(): void
     +detener(): void
     +obtener_estado_general(): String
+    +gestor_alertas(): GestorAlertas
+    +panel_control(): PanelDeControl
 }
 
 ' Clase de configuración
@@ -112,20 +116,20 @@ class ConfiguracionSistema {
     +max_alertas_por_hora: int
     +nivel_log: String
     +ruta_logs: String
-    
+
     +cargar_configuracion(archivo: String): void
     +guardar_configuracion(): void
     +validar_configuracion(): boolean
 }
 
-' Clase para registros 
+' Clase para registros
 class RegistroAlerta{
     +timestamp: DateTime
     +sensor_id: String
     +mensaje: String
     +nivel: String
     +valor_medido: float
-    
+
     +__init__(sensor_id: String, mensaje: String, nivel: String, valor: float)
     +to_json(): String
     +to_csv(): String
@@ -135,10 +139,20 @@ class RegistroAlerta{
 class PanelDeControl{
     -sistema: SistemaMonitoreo
     -interfaz_activa: boolean
-    
+
     +__init__(sistema: SistemaMonitoreo)
+    +limpiar_pantalla(): void
     +mostrar_dashboard(): void
-    +procesar_comandos(): void
+    +mostrar_menu_principal(): void
+    +procesar_comandos(): boolean
+    +mostrar_estado_sistema(): void
+    +generar_reporte_completo(): void
+    +simular_lecturas(): void
+    +evaluar_alertas(): void
+    +configurar_sistema(): void
+    +limpiar_historico(): void
+    +gestionar_notificadores(): void
+    +gestionar_sensores(): void
     +actualizar_interfaz(): void
 }
 
@@ -149,10 +163,15 @@ class SensorFactory{
     +crear_sensor_humedad(id: String, umbral: float): SensorHumedad
 }
 
+' ==================== FUNCIÓN DE CONFIGURACIÓN ====================
+class ConfiguradorSistema << (F,lightgreen) Function >> {
+    +configurar_sistema_inicial(sistema: SistemaMonitoreo): void
+}
+
 ' -----------------------RELACIONES----------------------
 ' Herencia (Generalización)
 Sensor <|-- SensorTemperatura : extends
-Sensor <|-- SensorVibracion : extends  
+Sensor <|-- SensorVibracion : extends
 Sensor <|-- SensorHumedad : extends
 
 ' Implementacion
@@ -177,5 +196,48 @@ PanelDeControl --> SistemaMonitoreo : uses
 SensorFactory "1" ..> "0..*" SensorTemperatura : creates
 SensorFactory "1" ..> "0..*" SensorVibracion : creates
 SensorFactory "1" ..> "0..*" SensorHumedad : creates
+ConfiguradorSistema "1" ..> "0..*" SistemaMonitoreo : configures
+ConfiguradorSistema "1" ..> "0..*" SensorFactory : uses
+
+' ==================== NOTAS EXPLICATIVAS ====================
+note right of Sensor : 🎨 ABSTRACCIÓN:\nClase abstracta que define\nla interfaz común para\ntodos los sensores
+
+note bottom of SensorTemperatura : 🧬 HERENCIA + 🎭 POLIMORFISMO:\nHereda de Sensor e implementa\nsu propia versión de en_alerta()
+
+note left of GestorAlertas : 🏗️ COMPOSICIÓN:\nContiene y gestiona sensores,\nnotificadores y configuración.\nSi se destruye, sus partes\ntambién se destruyen.
+
+note top of SistemaMonitoreo : 🤝 AGREGACIÓN:\nTiene un GestorAlertas y\nPanelDeControl, pero pueden\nexistir independientemente.
+
+note right of NotificadorEmail : 🔒 ENCAPSULACIÓN:\nAtributos privados (_destinatario)\nprotegidos del acceso externo\ndirecto.
+
+note bottom of PanelDeControl : 👋 ASOCIACIÓN:\nConoce y usa SistemaMonitoreo\npero no lo posee. Relación\nde colaboración.
+
+note left of SensorFactory : 📦 DEPENDENCIA:\nCrea instancias de sensores.\nDepende de las clases de\nsensores para funcionar.
+
+' ==================== COLORES PARA MEJOR VISUALIZACIÓN ====================
+skinparam class {
+    BackgroundColor<<Interface>> LightBlue
+    BackgroundColor<<Abstract>> LightYellow
+    BackgroundColor<<Function>> LightGreen
+    BorderColor<<Interface>> Blue
+    BorderColor<<Abstract>> Orange
+}
+
+' ==================== LEYENDA ====================
+legend bottom left
+    🎨 **4 PILARES OOP IMPLEMENTADOS:**
+    • 🔒 **Encapsulación**: Atributos privados con _
+    • 🧬 **Herencia**: Sensor → SensorTemperatura/Vibracion/Humedad  
+    • 🎭 **Polimorfismo**: Diferentes implementaciones de métodos
+    • 🎨 **Abstracción**: Clases abstractas y protocolos
+    
+    **RELACIONES UML:**
+    • ——▷ Herencia/Generalización
+    • ⋯▷ Implementación de Interface
+    • ——♦ Composición (contiene/posee)
+    • ——◇ Agregación (tiene/usa)
+    • ——→ Asociación (conoce/colabora)  
+    • ⋯→ Dependencia (usa temporalmente)
+end legend
 
 @enduml
